@@ -10,3 +10,7 @@ build/
 dist/
 *.spec
 *crash.log
+
+# Firebase
+web/.firebase/
+

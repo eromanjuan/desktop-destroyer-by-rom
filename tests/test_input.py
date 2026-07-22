@@ -103,6 +103,28 @@ def main() -> int:
     check("wash sweep finishes", app.sweep_x is None)
     check("wash restores pristine desktop", pixels(app.world) == pixels(app.pristine))
 
+    # Spacebar writes a PNG of the damage; Backspace washes like R.
+    import glob
+
+    shots = os.path.join(os.path.expanduser("~"), "Pictures", "Desktop Destroyer")
+    before_count = len(glob.glob(os.path.join(shots, "destroyed-*.png")))
+    send(type=pygame.MOUSEBUTTONDOWN, button=1, pos=(320, 210))
+    send(type=pygame.MOUSEBUTTONUP, button=1, pos=(320, 210))
+    send(type=pygame.KEYDOWN, key=pygame.K_SPACE, mod=0, unicode=" ", scancode=0)
+    saved = sorted(glob.glob(os.path.join(shots, "destroyed-*.png")))
+    check("spacebar saves a screenshot", len(saved) == before_count + 1)
+    if saved:
+        img = pygame.image.load(saved[-1])
+        check("screenshot matches the desktop size", img.get_size() == app.size)
+        os.remove(saved[-1])                      # don't litter the real folder
+    check("spacebar shows a confirmation", app.toast_timer > 0)
+
+    send(type=pygame.KEYDOWN, key=pygame.K_BACKSPACE, mod=0, unicode="", scancode=0)
+    check("backspace starts a wash", app.sweep_x is not None)
+    for _ in range(90):
+        app.update(1 / 60)
+    check("backspace wash restores the desktop", pixels(app.world) == pixels(app.pristine))
+
     send(type=pygame.MOUSEBUTTONDOWN, button=1, pos=button("quit").rect.center)
     check("exit button quits", app.running is False)
     app.running = True

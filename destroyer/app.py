@@ -14,6 +14,7 @@ from __future__ import annotations
 import os
 import random
 import sys
+import time
 
 import pygame
 
@@ -25,6 +26,7 @@ from .config import (FPS, HINT_FADE, HINT_HOLD, HINT_TEXT, SHAKE_DECAY,
 from .particles import ParticleSystem
 from .toolbar import Toolbar, load_font
 from .tools import ToolContext, build_tools
+
 
 def _asset_root() -> str:
     """Where to look for optional sound overrides.
@@ -98,10 +100,32 @@ class App:
         self.prev_mouse = pygame.mouse.get_pos()
         self.hint_timer = 0.0
         self.sweep_x = None
+        self.toast = ""
+        self.toast_timer = 0.0
 
     # -- effects -----------------------------------------------------------
     def add_shake(self, amount: float) -> None:
         self.trauma = min(1.0, self.trauma + amount)
+
+    def save_screenshot(self) -> None:
+        """Save the wrecked desktop to Pictures, for saving or sharing.
+
+        Saves `world` rather than the framebuffer, so the image is the damage
+        alone -- no toolbar, cursor or mid-air particles baked into it.
+        """
+        try:
+            folder = os.path.join(os.path.expanduser("~"), "Pictures", "Desktop Destroyer")
+            os.makedirs(folder, exist_ok=True)
+            name = time.strftime("destroyed-%Y%m%d-%H%M%S.png")
+            pygame.image.save(self.world, os.path.join(folder, name))
+            self.show_toast(f"Saved to Pictures\\Desktop Destroyer\\{name}")
+            self.audio.play("click")
+        except Exception:
+            self.show_toast("Could not save the screenshot")
+
+    def show_toast(self, text: str, seconds: float = 2.6) -> None:
+        self.toast = text
+        self.toast_timer = seconds
 
     def start_sweep(self) -> None:
         """Squeegee the whole desktop clean, left to right."""
@@ -134,8 +158,10 @@ class App:
             elif event.type == pygame.KEYDOWN:
                 if event.key in (pygame.K_ESCAPE, pygame.K_q):
                     self.running = False
-                elif event.key == pygame.K_r:
+                elif event.key in (pygame.K_r, pygame.K_BACKSPACE):
                     self.start_sweep()
+                elif event.key == pygame.K_SPACE:
+                    self.save_screenshot()
                 else:
                     for tool in self.tools:
                         if tool.key == event.key:
@@ -196,6 +222,7 @@ class App:
         self.particles.update(dt, self.size)
         self.trauma = max(0.0, self.trauma - SHAKE_DECAY * dt * max(0.35, self.trauma))
         self.hint_timer += dt
+        self.toast_timer = max(0.0, self.toast_timer - dt)
 
     def draw(self) -> None:
         offset = (0.0, 0.0)
@@ -213,6 +240,7 @@ class App:
 
         self.toolbar.draw(self.screen, self.tool)
         self._draw_hint()
+        self._draw_toast()
 
         pos = pygame.mouse.get_pos()
         if not self.toolbar.contains(pos):
@@ -230,6 +258,24 @@ class App:
             alpha = int(150 * (1.0 - abs(i - 13) / 13.0))
             pygame.draw.line(foam, (235, 248, 255, alpha), (i, 0), (i, h))
         self.screen.blit(foam, (x - 13, 0))
+
+    def _draw_toast(self) -> None:
+        if self.toast_timer <= 0.0 or not self.toast:
+            return
+        fade = min(1.0, self.toast_timer / 0.5)
+        img = self.font_hint.render(self.toast, True, (245, 246, 250))
+        box = img.get_rect()
+        box.inflate_ip(26, 16)
+        box.centerx = self.size[0] // 2
+        box.bottom = self.toolbar.rect.top - 18
+
+        panel = pygame.Surface(box.size, pygame.SRCALPHA)
+        pygame.draw.rect(panel, (18, 19, 24, int(224 * fade)), panel.get_rect(), border_radius=10)
+        pygame.draw.rect(panel, (120, 220, 150, int(90 * fade)), panel.get_rect(),
+                         width=1, border_radius=10)
+        img.set_alpha(int(255 * fade))
+        panel.blit(img, ((box.w - img.get_width()) // 2, (box.h - img.get_height()) // 2))
+        self.screen.blit(panel, box.topleft)
 
     def _draw_hint(self) -> None:
         if self.hint_timer > HINT_HOLD + HINT_FADE:

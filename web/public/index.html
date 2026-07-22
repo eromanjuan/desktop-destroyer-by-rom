@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Desktop Destroyer by Rom — smash your screen, not your keyboard</title>
+<meta name="description" content="A free Windows stress-relief app. It screenshots your desktop, puts the picture back full-screen, and lets you destroy it with ten weapons. Your real desktop is never touched.">
+<meta name="theme-color" content="#16181e">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Desktop Destroyer by Rom">
+<meta property="og:description" content="Freeze your screen and take it apart with a hammer, a katana, a shotgun and seven other weapons. Free, one file, no install.">
+<meta property="og:image" content="/assets/preview.png">
+<meta property="og:url" content="https://desktopdestroyer.web.app">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="/assets/icon.png" type="image/png">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav" id="nav">
+  <a class="brand" href="#home">
+    <img src="/assets/icon.png" alt="" width="34" height="34">
+    <span>Desktop&nbsp;Destroyer<em>by Rom</em></span>
+  </a>
+  <button class="burger" id="burger" aria-label="Menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <nav class="links" id="links">
+    <a href="#home">Home</a>
+    <a href="#weapons">Weapons</a>
+    <a href="#how">How to Play</a>
+    <a href="#about">About</a>
+    <a class="cta-sm" href="#download">Download</a>
+  </nav>
+</header>
+
+<main id="main">
+
+<!-- ───────────────────────── HOME ───────────────────────── -->
+<section class="hero" id="home">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">Free · Windows · No install</p>
+      <h1>Don't smash your <span class="strike">keyboard</span>.<br><span class="accent">Smash your screen.</span></h1>
+      <p class="lede">
+        Desktop Destroyer freezes whatever is on your screen and turns it into a
+        punching bag. Smash it with a hammer, slice it with a katana, mine it with
+        remote bombs — then wash it clean and get back to work.
+      </p>
+      <p class="reassure">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z"/></svg>
+        <!-- one element, or flex splits each text run into its own item -->
+        <span>Nothing on your computer is harmed. You are wrecking a
+              <strong>photograph</strong> of your screen.</span>
+      </p>
+      <div class="hero-actions">
+        <a class="btn primary" id="heroDownload" href="#download">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          Download free
+        </a>
+        <a class="btn ghost" href="#demo-anchor">Try it right here ↓</a>
+      </div>
+      <ul class="facts">
+        <li><b>10</b><span>weapons</span></li>
+        <li><b>32 MB</b><span>one file</span></li>
+        <li><b>0</b><span>installers</span></li>
+      </ul>
+    </div>
+
+    <!-- interactive playground -->
+    <div class="demo" id="demo-anchor">
+      <div class="demo-frame">
+        <div class="demo-bar">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <p>Try it — pick a weapon and click the screen</p>
+        </div>
+        <canvas id="playground" width="900" height="560"
+                aria-label="Interactive demo: click to damage a mock desktop"></canvas>
+        <div class="demo-hint" id="demoHint">Click or drag on the screen ↑</div>
+      </div>
+      <div class="demo-tools" id="demoTools" role="toolbar" aria-label="Demo weapons"></div>
+      <p class="demo-note">
+        A small taste in your browser. The real app does this to <em>your actual screen</em>,
+        with sound, screen shake and particles.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── WEAPONS ───────────────────────── -->
+<section class="section" id="weapons">
+  <div class="wrap">
+    <p class="eyebrow">The arsenal</p>
+    <h2>Ten ways to ruin a screenshot</h2>
+    <p class="sub">Click a weapon on the toolbar, or press its number key. Every weapon
+       leaves permanent damage until you wash the screen.</p>
+
+    <div class="cards" id="weaponCards"></div>
+  </div>
+</section>
+
+<!-- ───────────────────────── HOW TO PLAY ───────────────────────── -->
+<section class="section alt" id="how">
+  <div class="wrap">
+    <p class="eyebrow">How to play</p>
+    <h2>Destroy any screen in three seconds</h2>
+
+    <div class="setup">
+      <h3><span class="pin">📌</span> First-time setup: pin it to your taskbar</h3>
+      <p>This is the trick that makes it instant. Because the app photographs whatever is
+         on screen the moment it opens, launching it from the taskbar lets you destroy
+         <em>any</em> window, tab or document without ever alt-tabbing away.</p>
+      <ol class="steps tight">
+        <li><b>Find the file.</b> Locate <code>Desktop Destroyer by Rom.exe</code> where you downloaded it.</li>
+        <li><b>Pin it.</b> Right-click the file → <b>Show more options</b> → <b>Pin to taskbar</b>.</li>
+        <li><b>Done.</b> It now sits one click away, forever.</li>
+      </ol>
+    </div>
+
+    <ol class="steps big">
+      <li>
+        <span class="num">1</span>
+        <div>
+          <h3>Launch over any screen</h3>
+          <p>Open the window you want to obliterate — a buggy file, a spreadsheet, an
+             email you didn't like — then click the icon on your taskbar. The app
+             instantly freezes that exact view as your canvas.</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">2</span>
+        <div>
+          <h3>Pick your weapon</h3>
+          <p>Click any icon on the floating toolbar, or press a number key
+             <kbd>1</kbd>–<kbd>9</kbd> and <kbd>0</kbd>. The mouse wheel cycles through
+             them too. Drag the toolbar by its grip if it's in your way.</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">3</span>
+        <div>
+          <h3>Unleash</h3>
+          <p>Left-click to smash, shoot or throw. Hold and drag for the continuous
+             weapons — the flamethrower, paintbrush and washer. The katana and bow are
+             different: drag to aim, then <b>release</b> to strike.</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">4</span>
+        <div>
+          <h3>Save it, then wipe it</h3>
+          <p>Press <kbd>Space</kbd> to save a picture of the carnage to your Pictures
+             folder. Then hit <kbd>R</kbd> and a squeegee wipes the screen back to
+             spotless, ready to go again.</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="shortcuts">
+      <h3>Keyboard shortcuts</h3>
+      <table>
+        <thead><tr><th>Key</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>1</kbd>–<kbd>9</kbd> <kbd>0</kbd></td><td>Switch weapon (0 is the washer)</td></tr>
+          <tr><td>Mouse wheel</td><td>Cycle through weapons</td></tr>
+          <tr><td>Left click</td><td>Use the current weapon — hold and drag for continuous ones</td></tr>
+          <tr><td>Right click</td><td>Detonate every planted remote bomb at once</td></tr>
+          <tr><td><kbd>R</kbd> / <kbd>Backspace</kbd></td><td>Wash the whole screen clean</td></tr>
+          <tr><td><kbd>Space</kbd></td><td>Save a screenshot of your destroyed desktop</td></tr>
+          <tr><td><kbd>Esc</kbd> / <kbd>Q</kbd></td><td>Quit</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="protip">
+      <b>💡 Pro tip</b>
+      <p>Combine them. Slice a window open with the katana, plant remote bombs across
+         what's left, right-click to level everything at once, then sweep the edges with
+         the flamethrower. Press <kbd>Space</kbd> before you wash it — some wreckages
+         deserve to be kept.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── ABOUT ───────────────────────── -->
+<section class="section" id="about">
+  <div class="wrap about-grid">
+    <div>
+      <p class="eyebrow">About the app</p>
+      <h2>A punching bag for your screen</h2>
+      <p>Everybody has had a moment where a piece of software deserved to be hit. This is
+         the harmless version of that. Desktop Destroyer takes a screenshot of your
+         display, puts it straight back up in a borderless window, and hands you a
+         hammer. What you're attacking is an image — your files, windows and work are
+         completely untouched underneath.</p>
+      <p>It was built from scratch in Python with pygame. There is no game engine and no
+         art pack: every crack, bullet hole, burn mark, sword cut and explosion crater is
+         drawn procedurally in code, and every sound — the shotgun, the bowstring, the
+         flamethrower's roar — is synthesised from noise and sine waves the moment the
+         app starts. That's why the whole thing is one 32 MB file with nothing to install.</p>
+      <div class="tags">
+        <span>Python</span><span>pygame</span><span>numpy</span>
+        <span>Procedural art</span><span>Synthesised audio</span><span>Open source</span>
+      </div>
+    </div>
+
+    <div class="dev">
+      <p class="eyebrow">The developer</p>
+      <div class="dev-card">
+        <div class="avatar">R</div>
+        <h3>Rom</h3>
+        <p class="role">Builder of oddly satisfying things</p>
+        <p>I made Desktop Destroyer because I wanted a stress-relief toy that felt
+           genuinely good to use rather than just a novelty — real weight in the hammer,
+           real fire in the flamethrower, real glass in the cracks. It started as a
+           weekend experiment and turned into ten weapons and a physics-y particle
+           system.</p>
+        <p>It's free, it's open source, and it's yours. If it makes one bad afternoon
+           better, it did its job.</p>
+        <div class="dev-links">
+          <a class="btn ghost sm" href="https://github.com/eromanjuan/desktop-destroyer-by-rom" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2A10 10 0 0 0 8.8 21.5c.5.1.7-.2.7-.5v-1.7C6.7 20 6.1 18 6.1 18c-.5-1.2-1.2-1.5-1.2-1.5-.9-.7.1-.7.1-.7 1 .1 1.6 1.1 1.6 1.1.9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.7 1a9.4 9.4 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5A10 10 0 0 0 12 2z"/></svg>
+            View source
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── DOWNLOAD ───────────────────────── -->
+<section class="section download" id="download">
+  <div class="wrap">
+    <p class="eyebrow">Download</p>
+    <h2>Grab it and start smashing</h2>
+    <p class="sub">One file. No installer, no admin rights, no account. Double-click and go.</p>
+
+    <div class="dl-card">
+      <img src="/assets/icon.png" alt="" width="88" height="88">
+      <div class="dl-meta">
+        <h3>Desktop Destroyer by Rom</h3>
+        <p><b>v1.0.0</b> · 32 MB · Windows 10 &amp; 11 (64-bit)</p>
+      </div>
+      <a class="btn primary big" id="dlBtn"
+         href="https://github.com/eromanjuan/desktop-destroyer-by-rom/releases/latest/download/Desktop.Destroyer.by.Rom.exe">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+        Download .exe
+      </a>
+    </div>
+
+    <div class="notes">
+      <div class="note">
+        <h4>⚠️ Windows may warn you</h4>
+        <p>The app isn't code-signed — a certificate costs money this free project doesn't
+           have. Windows will show <em>"Windows protected your PC"</em>. Click
+           <b>More info</b> → <b>Run anyway</b>. The full source is public if you'd
+           rather read it or build it yourself.</p>
+      </div>
+      <div class="note">
+        <h4>⏳ First launch is slower</h4>
+        <p>Give it a few seconds the first time. Everything is packed into a single file,
+           so it unpacks itself before starting. It's quick after that.</p>
+      </div>
+      <div class="note">
+        <h4>🔒 What it does to your PC</h4>
+        <p>Nothing. It writes no settings, no registry keys and no installers. The only
+           thing it ever saves is a screenshot, and only when you press
+           <kbd>Space</kbd>. Delete the file and it's gone.</p>
+      </div>
+      <div class="note">
+        <h4>🧰 Prefer to build it?</h4>
+        <p>Clone the repo, <code>pip install -r requirements.txt</code>, then
+           <code>python main.py</code>. Or run <code>python build.py</code> to produce
+           the same .exe yourself.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap foot">
+    <p>Desktop&nbsp;Destroyer — built by <b>Rom</b>.</p>
+    <nav>
+      <a href="https://github.com/eromanjuan/desktop-destroyer-by-rom" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/eromanjuan/desktop-destroyer-by-rom/releases" target="_blank" rel="noopener">Releases</a>
+      <a href="#home">Back to top</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

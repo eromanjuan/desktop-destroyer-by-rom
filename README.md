@@ -2,6 +2,9 @@
 
 <img src="docs/icon.png" width="96" align="right" alt="app icon">
 
+**[desktopdestroyer.web.app](https://desktopdestroyer.web.app)** — download it, or try a
+playable demo right in your browser.
+
 Takes a screenshot of your desktop, puts it back on screen in a borderless
 always-on-top window, and lets you destroy it. Smash it with a hammer, unload a
 shotgun into it, burn it with a flamethrower, paint over it — then wash it clean
@@ -58,7 +61,8 @@ with) and produces `dist/Desktop Destroyer by Rom.exe`. Use
 | Right mouse | Secondary action — detonates every planted remote bomb |
 | `1` – `9`, `0` | Pick a tool |
 | Mouse wheel | Cycle tools |
-| `R` | Squeegee the whole desktop clean |
+| `R` or `Backspace` | Squeegee the whole desktop clean |
+| `Space` | Save a PNG of the wreckage to `Pictures\Desktop Destroyer` |
 | `Esc` or `Q` | Quit |
 | Drag the grip | Move the toolbar out of your way |
 

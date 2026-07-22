@@ -5,27 +5,48 @@
 
 /* ─────────────────────────── weapon data ─────────────────────────── */
 const WEAPONS = [
-  { key:'1', ico:'🔨', name:'Hammer',       use:'Left-click',
+  { key:'1', ico:'carpenter', name:'Hammer',       use:'Left-click',
     text:'Caves in the screen with a spiderweb of shattered glass, throws debris and kicks the whole view sideways.' },
-  { key:'2', ico:'⚔️', name:'Katana',       use:'Drag, then release',
+  { key:'2', ico:'swords', name:'Katana',       use:'Drag, then release',
     text:'Draw out a stroke and let go. Leaves a clean tapered gash that bites deepest mid-swing, with sparks along the edge.' },
-  { key:'3', ico:'🔫', name:'Shotgun',      use:'Hold to unload',
+  { key:'3', ico:'scatter_plot', name:'Shotgun',      use:'Hold to unload',
     text:'A cone of ragged bullet holes per blast, with muzzle flash, sparks and recoil. Holding it down keeps firing.' },
-  { key:'4', ico:'🏹', name:'Bow',          use:'Hold to draw, release',
+  { key:'4', ico:'target', name:'Bow',          use:'Hold to draw, release',
     text:'The longer you draw, the harder it hits. Arrows stay stuck in your screen — a full-power shot shatters the surface around it.' },
-  { key:'5', ico:'🪨', name:'Rock',         use:'Click to throw',
+  { key:'5', ico:'terrain', name:'Rock',         use:'Click to throw',
     text:'No fuse, no charge. It arcs in, cracks whatever it lands on and chips flakes out of the surface. Throw another.' },
-  { key:'6', ico:'💣', name:'Grenade',      use:'Click to lob',
+  { key:'6', ico:'bomb', name:'Grenade',      use:'Click to lob',
     text:'Arcs in and sits there blinking for 1.2 seconds — then craters everything nearby in fire, soot and shrapnel.' },
-  { key:'7', ico:'🧨', name:'Remote Bomb',  use:'Left-click plant · right-click BOOM',
+  { key:'7', ico:'explosion', name:'Remote Bomb',  use:'Left-click plant · right-click BOOM',
     text:'Mine the whole desktop with charges, then right-click once to set every one of them off in a rolling chain reaction.' },
-  { key:'8', ico:'🔥', name:'Flamethrower', use:'Hold and drag',
+  { key:'8', ico:'local_fire_department', name:'Flamethrower', use:'Hold and drag',
     text:'A continuous jet of fire that scorches everything it touches. Linger and the screen burns through to pure black char.' },
-  { key:'9', ico:'🎨', name:'Paintbrush',   use:'Drag to paint',
+  { key:'9', ico:'brush', name:'Paintbrush',   use:'Drag to paint',
     text:'For when you would rather deface than destroy. The colour shifts through the rainbow as you drag.' },
-  { key:'0', ico:'🧼', name:'Washer',       use:'Scrub to undo',
+  { key:'0', ico:'cleaning_services', name:'Washer',       use:'Scrub to undo',
     text:'Scrubs the original desktop back into view wherever you rub. Or press R and a squeegee wipes the whole screen clean.' },
 ];
+
+/* ─────────────────────────── icon font gate ───────────────────────────
+   Material Symbols renders via ligatures, so the markup literally contains the
+   word "carpenter". Reveal icons only once the font is confirmed loaded —
+   otherwise a blocked or slow CDN would print those words on the page. */
+(function icons(){
+  const reveal = () => {
+    try {
+      if (document.fonts.check('24px "Material Symbols Outlined"')) {
+        document.documentElement.classList.add('icons-ready');
+        return true;
+      }
+    } catch { /* no Font Loading API — leave icons hidden, labels still read */ }
+    return false;
+  };
+  if (!document.fonts) return;
+  document.fonts.load('24px "Material Symbols Outlined"').then(reveal).catch(() => {});
+  document.fonts.ready.then(reveal).catch(() => {});
+  // A few late retries: fonts.ready can settle before a swap-loaded face lands.
+  [400, 1200, 3000].forEach(ms => setTimeout(reveal, ms));
+})();
 
 /* ─────────────────────────── nav + reveal ─────────────────────────── */
 (function chrome(){
@@ -72,7 +93,7 @@ const WEAPONS = [
   host.innerHTML = WEAPONS.map(w => `
     <article class="card">
       <div class="card-top">
-        <span class="ico">${w.ico}</span>
+        <span class="msym ico">${w.ico}</span>
         <h3>${w.name}</h3>
         <span class="key">${w.key}</span>
       </div>
@@ -253,17 +274,17 @@ const WEAPONS = [
   const shake = n => trauma = Math.min(20, trauma + n);
 
   const TOOLS = [
-    {id:'hammer', ico:'🔨', label:'Hammer'},
-    {id:'katana', ico:'⚔️', label:'Katana'},
-    {id:'gun',    ico:'🔫', label:'Shotgun'},
-    {id:'grenade',ico:'💣', label:'Grenade'},
-    {id:'flame',  ico:'🔥', label:'Flame'},
-    {id:'paint',  ico:'🎨', label:'Paint'},
+    {id:'hammer', ico:'carpenter', label:'Hammer'},
+    {id:'katana', ico:'swords', label:'Katana'},
+    {id:'gun',    ico:'scatter_plot', label:'Shotgun'},
+    {id:'grenade',ico:'bomb', label:'Grenade'},
+    {id:'flame',  ico:'local_fire_department', label:'Flame'},
+    {id:'paint',  ico:'brush', label:'Paint'},
   ];
   const bar = document.getElementById('demoTools');
   bar.innerHTML = TOOLS.map(t =>
-    `<button class="tool-btn${t.id==='hammer'?' on':''}" data-t="${t.id}"><span class="ic">${t.ico}</span>${t.label}</button>`
-  ).join('') + `<button class="tool-btn reset" data-t="wash"><span class="ic">🧼</span>Wash it clean</button>`;
+    `<button class="tool-btn${t.id==='hammer'?' on':''}" data-t="${t.id}"><span class="msym ic">${t.ico}</span>${t.label}</button>`
+  ).join('') + `<button class="tool-btn reset" data-t="wash"><span class="msym ic">cleaning_services</span>Wash it clean</button>`;
 
   bar.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;

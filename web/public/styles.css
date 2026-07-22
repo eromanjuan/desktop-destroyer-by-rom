@@ -41,6 +41,22 @@ kbd{
 .skip{position:absolute;left:-999px}
 .skip:focus{left:12px;top:12px;background:var(--accent);color:#fff;padding:10px 16px;border-radius:8px;z-index:99}
 
+/* Material Symbols — ligature glyphs, so the element text IS the icon name.
+   That means a failed font download would render the literal word "carpenter"
+   on the page. So icons stay hidden until app.js confirms the font is actually
+   available; if it never loads, the text labels simply stand on their own. */
+.msym{display:none}
+html.icons-ready .msym{
+  font-family:'Material Symbols Outlined';font-weight:400;font-style:normal;
+  font-size:1.35rem;line-height:1;letter-spacing:normal;text-transform:none;
+  display:inline-block;white-space:nowrap;word-wrap:normal;direction:ltr;
+  vertical-align:-.22em;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';
+  -webkit-font-smoothing:antialiased;
+  font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;
+}
+html.icons-ready .msym.sm{font-size:1.05rem;vertical-align:-.18em}
+h3 .msym,h4 .msym,b .msym{margin-right:9px;color:var(--accent)}
+
 .eyebrow{
   text-transform:uppercase;letter-spacing:.16em;font-size:.74rem;font-weight:700;
   color:var(--accent);margin:0 0 .8em;
@@ -185,7 +201,7 @@ kbd{
 .setup p{color:var(--dim);max-width:78ch}
 .steps{list-style:none;padding:0;margin:0}
 .steps.tight li{padding:7px 0 7px 30px;position:relative;color:var(--dim)}
-.steps.tight li::before{content:"→";position:absolute;left:4px;color:var(--accent);font-weight:700}
+.steps.tight li::before{content:"";position:absolute;left:2px;top:16px;width:0;height:0;border-left:6px solid var(--accent);border-top:4px solid transparent;border-bottom:4px solid transparent}
 .steps.tight b{color:var(--text)}
 .steps.big{display:grid;gap:16px;counter-reset:s}
 .steps.big li{
@@ -230,7 +246,7 @@ kbd{
 .proj h4{margin:0 0 .6em;font-size:.78rem;text-transform:uppercase;letter-spacing:.12em;color:var(--dim)}
 .proj ul{list-style:none;padding:0;margin:0;display:grid;gap:7px}
 .proj li{color:var(--dim);font-size:.9rem;padding-left:16px;position:relative}
-.proj li::before{content:"▸";position:absolute;left:0;color:var(--accent)}
+.proj li::before{content:"";position:absolute;left:0;top:9px;width:0;height:0;border-left:5px solid var(--accent);border-top:3.5px solid transparent;border-bottom:3.5px solid transparent}
 .proj b{color:var(--text)}
 .tags.small{margin-top:16px}
 .tags.small span{padding:4px 11px;font-size:.78rem}
@@ -258,6 +274,19 @@ kbd{
 .note{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
 .note h4{margin:0 0 .5em;font-size:.98rem}
 .note p{margin:0;color:var(--dim);font-size:.9rem}
+
+/* ko-fi support block */
+.support{
+  margin-top:26px;text-align:center;border-radius:16px;padding:32px 24px;
+  background:linear-gradient(180deg,rgba(255,160,60,.10),rgba(255,96,48,.04));
+  border:1px solid rgba(255,160,60,.26);
+}
+.support .cup{font-size:2rem;display:block;margin-bottom:6px}
+.support h3{margin:0 0 .4em;font-size:1.24rem}
+.support p{color:var(--dim);max-width:52ch;margin:0 auto 20px;font-size:.95rem}
+.kofi{display:inline-block;border-radius:9px;transition:transform .16s,filter .16s}
+.kofi:hover{transform:translateY(-2px);filter:brightness(1.08)}
+.kofi img{display:block;border:0;height:36px;width:auto}
 
 /* footer */
 .footer{border-top:1px solid var(--line);padding:30px 0;background:var(--bg)}

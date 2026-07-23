@@ -60,6 +60,7 @@ class Toolbar:
         self.dragging = False
         self.drag_offset = (0, 0)
         self.hover: Button | None = None
+        self.hover_toggle = False
         self.mode = "bar"
 
         self.rect = pygame.Rect(0, 0, 10, 10)
@@ -174,6 +175,7 @@ class Toolbar:
 
     def update_hover(self, pos) -> None:
         self.hover = None
+        self.hover_toggle = self.toggle_rect.collidepoint(pos)
         if not self.visible or not self.rect.collidepoint(pos):
             return
         for btn in self.buttons:
@@ -187,6 +189,26 @@ class Toolbar:
             self._draw_panel(surf, active_tool)
             self._draw_tooltip(surf)
         self._draw_toggle(surf)
+        if self.hover_toggle:
+            self._draw_toggle_tip(surf)
+
+    def _draw_toggle_tip(self, surf: pygame.Surface) -> None:
+        nxt = MODES[(MODES.index(self.mode) + 1) % len(MODES)]
+        names = {"bar": "list", "grid": "grid", "hidden": "hidden"}
+        t_img = self.font_tip.render("Weapon menu", True, COL_TEXT)
+        s_img = self.font.render(f"{names[self.mode]} → {names[nxt]}   ·   click / Tab",
+                                 True, COL_TEXT_DIM)
+        w = max(t_img.get_width(), s_img.get_width()) + 20
+        h = t_img.get_height() + s_img.get_height() + 15
+        box = pygame.Rect(0, 0, w, h)
+        box.bottomright = (self.toggle_rect.right, self.toggle_rect.top - 8)
+        box.left = max(6, box.left)
+        tip = pygame.Surface(box.size, pygame.SRCALPHA)
+        pygame.draw.rect(tip, (18, 19, 24, 236), tip.get_rect(), border_radius=9)
+        pygame.draw.rect(tip, COL_BAR_EDGE, tip.get_rect(), width=1, border_radius=9)
+        tip.blit(t_img, ((w - t_img.get_width()) // 2, 6))
+        tip.blit(s_img, ((w - s_img.get_width()) // 2, 6 + t_img.get_height() + 3))
+        surf.blit(tip, box.topleft)
 
     def _draw_panel(self, surf, active_tool) -> None:
         panel = pygame.Surface(self.rect.size, pygame.SRCALPHA)

@@ -114,20 +114,29 @@ def main() -> int:
     fire.update(DT, ctx)
     check("the washer douses gasoline", len(fire) < n_before)
 
-    # An arrow stuck in the screen catches fire, burns away, and leaves a mark.
+    # Arrows stuck in the screen catch fire, burn away, and leave a mark. Draw
+    # every frame -- the char tint is applied at render time, and a burning
+    # arrow whose char strayed out of range used to crash pygame here. Several
+    # arrows so their randomised burn times cover the full char range.
     ctx, fire, tools = fresh()
+    screen = pygame.display.get_surface()
     before = pixels(ctx.world)
-    fire.add_arrow((300, 250), 200, 60, 0.6)
-    fire.ignite((300, 250), 40, ctx)
+    for i in range(6):
+        fire.add_arrow((200 + i * 40, 250), 180 + i * 20, 55 + i * 4, 0.6)
+    fire.ignite((320, 250), 200, ctx)
     consumed = False
     for _ in range(60 * 8):
         fire.update(DT, ctx)
         ctx.particles.update(DT, (W, H))
+        screen.fill((0, 0, 0))
+        fire.draw_ground(screen, (0, 0))
+        ctx.particles.draw(screen, (0, 0))
+        fire.draw_top(screen, (0, 0))          # renders the burning/falling arrows
         if len(fire.arrows) == 0:
             consumed = True
             break
-    check("a stuck arrow burns away", consumed)
-    check("the burnt arrow leaves a scar", pixels(ctx.world) != before)
+    check("stuck arrows burn away", consumed)
+    check("the burnt arrows leave a scar", pixels(ctx.world) != before)
 
     # A planted bomb goes off on its own the instant fire reaches it -- no
     # remote -- and while a different tool is notionally in hand.

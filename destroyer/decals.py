@@ -212,8 +212,10 @@ def draw_arrow(surf: pygame.Surface, tip, angle: float, length: float,
     charred wood rather than fresh.
     """
     def _burn(rgb):
-        # Lerp toward near-black soot as char rises.
-        return tuple(int(v + (24 - v) * char) for v in rgb)
+        # Lerp toward near-black soot as char rises. Clamped so a caller passing
+        # a char outside 0..1 can never produce an out-of-range colour (that
+        # crashed pygame when a burning arrow's char briefly went negative).
+        return tuple(max(0, min(255, int(v + (24 - v) * char))) for v in rgb)
 
     rad = math.radians(angle)
     dx, dy = math.cos(rad), math.sin(rad)

@@ -111,7 +111,8 @@ class Puddle:
 
 class StuckArrow:
     __slots__ = ("x", "y", "ox", "oy", "angle", "length", "charge", "state",
-                 "burn_left", "fall_t", "emit_debt", "scorch_t", "flick", "vx", "vr")
+                 "burn_left", "burn_total", "fall_t", "emit_debt", "scorch_t",
+                 "flick", "vx", "vr")
 
     def __init__(self, x, y, angle, length, charge):
         self.x, self.y = x, y
@@ -121,6 +122,7 @@ class StuckArrow:
         self.charge = charge
         self.state = A_STUCK
         self.burn_left = 0.0
+        self.burn_total = 1.0
         self.fall_t = 0.0
         self.emit_debt = 0.0
         self.scorch_t = 0.0
@@ -230,7 +232,7 @@ class FireSystem:
     def _light_arrow(self, a: StuckArrow) -> None:
         if a.state == A_STUCK:
             a.state = A_BURNING
-            a.burn_left = self.rng.uniform(*ARROW_BURN)
+            a.burn_left = a.burn_total = self.rng.uniform(*ARROW_BURN)
             a.scorch_t = 0.0
 
     def _schedule_charge(self, c: Charge, delay: float) -> None:
@@ -452,8 +454,9 @@ class FireSystem:
             if a.state == A_STUCK:
                 decals.draw_arrow(surf, (x, y), a.angle, a.length, head=False)
             elif a.state == A_BURNING:
-                # Char the shaft as it burns; embers at the base.
-                char = min(0.9, 1.0 - a.burn_left / max(0.1, sum(ARROW_BURN) / 2))
+                # Char rises 0 -> ~0.95 across this arrow's own burn time.
+                char = 0.95 * (1.0 - a.burn_left / a.burn_total)
+                char = max(0.0, min(0.95, char))
                 decals.draw_arrow(surf, (x, y), a.angle, a.length, head=False, char=char)
             elif a.state == A_FALLING:
                 fade = max(0, 1.0 - a.fall_t / ARROW_FALL)

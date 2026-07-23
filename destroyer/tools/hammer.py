@@ -59,6 +59,10 @@ class Hammer(Tool):
         ctx.particles.burst_glass(pos, count=r.randint(8, 14))
         ctx.particles.burst_sparks(pos, count=6, speed=(60, 240),
                                    color=(255, 190, 110), life=(0.12, 0.32))
+        if ctx.bugs is not None:
+            ctx.bugs.hit(ctx, pos, radius * 0.6, "smash")
+        if ctx.fire is not None:            # knock any stuck shuriken/kunai loose
+            ctx.fire.dislodge(pos, radius)
         ctx.shake(0.85)
         ctx.audio.play("hammer")
 

@@ -158,6 +158,22 @@ def main() -> int:
             break
     check("fire alone sets off a planted bomb (no remote)", auto)
 
+    # A shuriken/kunai embeds as a pin; a hammer blow or a blast knocks it loose
+    # and it falls off the screen.
+    from destroyer.fire import P_FALLING, P_STUCK
+
+    ctx, fire, tools = fresh()
+    fire.add_pin((300, 250), 40, "kunai")
+    fire.add_pin((320, 250), 90, "star")
+    check("thrown blades embed as pins", len(fire.pins) == 2
+          and all(p.state == P_STUCK for p in fire.pins))
+    fire.dislodge((310, 250), 60)
+    check("a blow dislodges nearby pins",
+          all(p.state == P_FALLING for p in fire.pins))
+    for _ in range(60 * 2):
+        fire.update(DT, ctx)
+    check("dislodged pins fall away", len(fire.pins) == 0)
+
     pygame.quit()
     print("\nFAILURES:", failures if failures else "none")
     return 1 if failures else 0

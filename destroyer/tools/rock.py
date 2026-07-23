@@ -108,6 +108,8 @@ class Rock(Tool):
         ctx.particles.burst_debris(pos, count=r.randint(10, 18), speed=(120, 520))
         ctx.particles.burst_glass(pos, count=r.randint(6, 12))
         ctx.particles.smoke_cloud(pos, count=3)     # puff of dust
+        if ctx.bugs is not None:
+            ctx.bugs.hit(ctx, pos, 30 * heft, "smash")
         ctx.shake(0.3 + 0.35 * heft)
         ctx.audio.play("rock")
 

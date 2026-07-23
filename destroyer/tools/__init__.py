@@ -10,6 +10,7 @@ import pygame
 from .base import Tool, ToolContext
 from .bomb import RemoteBomb
 from .bow import Bow
+from .bugs_tool import Bugs
 from .flamethrower import Flamethrower
 from .gasoline import Gasoline
 from .grenade import Grenade
@@ -19,25 +20,29 @@ from .katana import Katana
 from .missile import Missile
 from .paintbrush import Paintbrush
 from .rock import Rock
+from .rpg import RPG
+from .shuriken import Shuriken
 from .washer import Washer
 
-__all__ = ["Tool", "ToolContext", "build_tools", "Hammer", "Katana", "Gun",
-           "Bow", "Rock", "Grenade", "RemoteBomb", "Gasoline", "Flamethrower",
-           "Missile", "Paintbrush", "Washer"]
+__all__ = ["Tool", "ToolContext", "build_tools", "Hammer", "Katana", "Shuriken",
+           "Gun", "Bow", "Rock", "Grenade", "RPG", "RemoteBomb", "Gasoline",
+           "Flamethrower", "Missile", "Bugs", "Paintbrush", "Washer"]
 
-# 1-9 then 0, matching how the keys sit on the keyboard. There are more tools
-# than number keys now, so any tool past the tenth is toolbar/wheel only. The
-# paintbrush and washer sit last -- the washer already has its R / Backspace
-# shortcut, and both are utilities rather than weapons.
-HOTKEYS = [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5,
-           pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9, pygame.K_0]
+# Mnemonic letter keys, so they map to what a tool *is* rather than a slot
+# number. Q (quit) and R (wash) are reserved by the app and stay off this list.
+HOTKEYS = {
+    "hammer": pygame.K_h, "katana": pygame.K_k, "shuriken": pygame.K_s,
+    "gun": pygame.K_g, "bow": pygame.K_b, "rock": pygame.K_t,
+    "grenade": pygame.K_n, "rpg": pygame.K_p, "bomb": pygame.K_m,
+    "gasoline": pygame.K_l, "flame": pygame.K_f, "missile": pygame.K_u,
+    "bug": pygame.K_i, "brush": pygame.K_a, "wash": pygame.K_w,
+}
 
 
 def build_tools() -> list[Tool]:
-    tools = [Hammer(), Katana(), Gun(), Bow(), Rock(), Grenade(), RemoteBomb(),
-             Gasoline(), Flamethrower(), Missile(), Paintbrush(), Washer()]
-    # Hotkeys follow toolbar order, so the two can never drift apart as tools
-    # are added or reordered.
-    for tool, key in zip(tools, HOTKEYS):
-        tool.key = key
+    tools = [Hammer(), Katana(), Shuriken(), Gun(), Bow(), Rock(),
+             Grenade(), RPG(), RemoteBomb(), Gasoline(), Flamethrower(),
+             Missile(), Bugs(), Paintbrush(), Washer()]
+    for tool in tools:
+        tool.key = HOTKEYS.get(tool.id)
     return tools

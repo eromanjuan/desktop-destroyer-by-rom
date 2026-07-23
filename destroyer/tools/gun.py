@@ -48,6 +48,8 @@ class Gun(Tool):
 
         ctx.particles.muzzle_flash(pos, direction=(0, -1))
         ctx.particles.burst_debris(pos, count=r.randint(5, 9), speed=(90, 360))
+        if ctx.bugs is not None:
+            ctx.bugs.hit(ctx, pos, SPREAD, "shot")
         ctx.shake(0.5)
         ctx.audio.play("gunshot")
 

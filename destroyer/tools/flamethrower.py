@@ -47,9 +47,11 @@ class Flamethrower(Tool):
         if count > 0:
             ctx.particles.flame(pos, drift=drift, count=count)
 
-        # Sweeping the flame over gasoline sets it alight.
+        # Sweeping the flame over gasoline sets it alight, and torches bugs.
         if ctx.fire is not None:
             ctx.fire.ignite(pos, 26.0, ctx)
+        if ctx.bugs is not None:
+            ctx.bugs.hit(ctx, pos, 30.0, "burn")
 
         # Char builds up along the whole dragged path, not just the endpoint.
         self.scorch_timer += dt

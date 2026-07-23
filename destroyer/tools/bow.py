@@ -112,6 +112,8 @@ class Bow(Tool):
         ctx.particles.burst_debris(pos, count=int(5 + 12 * charge),
                                    speed=(80, 260 + 320 * charge))
         ctx.particles.burst_glass(pos, count=int(3 + 8 * charge))
+        if ctx.bugs is not None:
+            ctx.bugs.hit(ctx, pos, 20, "shot")
         ctx.shake(0.22 + 0.68 * charge)
         ctx.audio.play("thunk", volume=0.5 + 0.5 * charge)
 

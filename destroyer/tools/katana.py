@@ -82,6 +82,11 @@ class Katana(Tool):
                                    p0[1] + (p1[1] - p0[1]) * 0.5),
                                   count=int(min(18, length / 22)))
 
+        # Cut clean through any bug along the stroke.
+        if ctx.bugs is not None:
+            mid = ((p0[0] + p1[0]) * 0.5, (p0[1] + p1[1]) * 0.5)
+            ctx.bugs.hit(ctx, mid, length * 0.5 + 12, "slice")
+
         self.trails.append([p0, p1, 0.0])
         ctx.shake(min(0.7, 0.18 + length / 1400.0))
         ctx.audio.play("slash")

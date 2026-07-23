@@ -27,6 +27,7 @@ class ToolContext:
     shake: Callable[[float], None]
     size: tuple[int, int]
     fire: "object" = None        # FireSystem -- shared gasoline/fire, set by App
+    bugs: "object" = None        # BugSystem -- wandering critters, set by App
 
 
 class Tool:

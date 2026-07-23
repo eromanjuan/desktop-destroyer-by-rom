@@ -115,6 +115,9 @@ class Missile(Tool):
         ctx.shake(1.0)
         if ctx.fire is not None:                    # set off gasoline and bombs
             ctx.fire.ignite(pos, R * 0.85, ctx)
+            ctx.fire.dislodge(pos, R)
+        if ctx.bugs is not None:
+            ctx.bugs.hit(ctx, pos, R * 0.9, "burn")
         ctx.audio.play("nuke", volume=max(0.5, 1.0 - 0.05 * len(self.missiles)))
 
     def deactivate(self, ctx: ToolContext):

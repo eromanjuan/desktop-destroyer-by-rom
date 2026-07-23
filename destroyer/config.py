@@ -31,6 +31,6 @@ COL_TEXT_DIM = (150, 155, 168)
 COL_DANGER = (255, 92, 92)
 
 # --- hint overlay ----------------------------------------------------------
-HINT_TEXT = "ESC quit  ·  1-9,0 weapons  ·  R wash  ·  SPACE save a screenshot"
+HINT_TEXT = "ESC quit  ·  letter keys pick weapons  ·  TAB toolbar mode  ·  R wash  ·  SPACE screenshot"
 HINT_HOLD = 3.2            # seconds fully visible
 HINT_FADE = 1.4            # seconds to fade out

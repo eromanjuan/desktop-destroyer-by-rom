@@ -44,6 +44,10 @@ ARROW_BURN = (2.2, 3.6)   # seconds an arrow flames before it topples
 ARROW_FALL = 0.9          # seconds to tip out of the screen
 A_STUCK, A_BURNING, A_FALLING, A_GONE = 0, 1, 2, 3
 
+# -- embedded metal projectiles (shuriken / kunai) --------------------------
+P_STUCK, P_FALLING = 0, 1
+PIN_FALL = 1.0            # seconds a dislodged pin takes to tumble away
+
 # -- remote-bomb charges ----------------------------------------------------
 CHARGE_FUSE_R = 24.0      # fire this close to a charge sets it off
 CHAIN_STAGGER = 0.07
@@ -140,11 +144,27 @@ class Charge:
         self.triggered = False
 
 
+class Pin:
+    """A shuriken or kunai embedded in the screen -- knocked loose by a hammer
+    blow or a blast, then it tumbles off and falls away."""
+
+    __slots__ = ("kind", "x", "y", "angle", "state", "fall_t", "vx", "vy", "vr")
+
+    def __init__(self, kind, x, y, angle):
+        self.kind = kind        # "star" | "kunai"
+        self.x, self.y = x, y
+        self.angle = angle
+        self.state = P_STUCK
+        self.fall_t = 0.0
+        self.vx = self.vy = self.vr = 0.0
+
+
 class FireSystem:
     def __init__(self, rng):
         self.rng = rng
         self.puddles: list[Puddle] = []
         self.arrows: list[StuckArrow] = []
+        self.pins: list[Pin] = []
         self.charges: list[Charge] = []
         self.pending: list[list] = []      # [pos, delay] -- charge detonations
         self.blast_fx = BlastFX()
@@ -166,6 +186,10 @@ class FireSystem:
     @property
     def has_fuel(self) -> bool:
         return any(p.state == WET for p in self.puddles)
+
+    def is_burning_near(self, x, y, extra=0.0) -> bool:
+        """Public check used by the bug system to torch bugs that walk into fire."""
+        return self._burning_near(x, y, extra)
 
     def _burning_near(self, x, y, extra=0.0) -> bool:
         for p in self.puddles:
@@ -198,6 +222,27 @@ class FireSystem:
 
     def add_charge(self, pos) -> None:
         self.charges.append(Charge(pos[0], pos[1]))
+
+    def add_pin(self, pos, angle, kind) -> None:
+        """Embed a shuriken/kunai that a blow or blast can later shake loose."""
+        self.pins.append(Pin(kind, pos[0], pos[1], angle))
+
+    def dislodge(self, pos, radius: float) -> int:
+        """Knock any embedded pin within `radius` loose so it tumbles and falls.
+        Called by the hammer and by every blast."""
+        x, y = pos
+        n = 0
+        for p in self.pins:
+            if p.state == P_STUCK and math.hypot(p.x - x, p.y - y) <= radius:
+                p.state = P_FALLING
+                # Fling away from the impact, then gravity takes over.
+                a = math.atan2(p.y - y, p.x - x) if (p.x, p.y) != (x, y) else self.rng.uniform(0, math.tau)
+                sp = self.rng.uniform(40, 130)
+                p.vx = math.cos(a) * sp + self.rng.uniform(-30, 30)
+                p.vy = math.sin(a) * sp - self.rng.uniform(20, 80)
+                p.vr = self.rng.uniform(-12, 12)
+                n += 1
+        return n
 
     # -- ignition ----------------------------------------------------------
     def ignite(self, pos, radius: float, ctx=None) -> bool:
@@ -277,6 +322,7 @@ class FireSystem:
     def clear(self) -> None:
         self.puddles.clear()
         self.arrows.clear()
+        self.pins.clear()
         self.charges.clear()
         self.pending.clear()
         self.blast_fx.clear()
@@ -288,6 +334,7 @@ class FireSystem:
 
         self._update_gasoline(dt, ctx, rng, world, particles)
         self._update_arrows(dt, ctx, rng, world, particles)
+        self._update_pins(dt, ctx)
         self._update_charges(dt, ctx, rng)
         self.blast_fx.update(dt)
 
@@ -392,6 +439,18 @@ class FireSystem:
 
         self.arrows = [a for a in self.arrows if a.state != A_GONE]
 
+    def _update_pins(self, dt, ctx) -> None:
+        h = ctx.size[1]
+        for p in self.pins:
+            if p.state == P_FALLING:
+                p.fall_t += dt
+                p.vy += 1100 * dt          # gravity
+                p.x += p.vx * dt
+                p.y += p.vy * dt
+                p.angle += p.vr * dt * 57.3
+        self.pins = [p for p in self.pins
+                     if not (p.state == P_FALLING and (p.fall_t > PIN_FALL or p.y > h + 40))]
+
     def _update_charges(self, dt, ctx, rng) -> None:
         for c in self.charges:
             c.age += dt
@@ -465,6 +524,26 @@ class FireSystem:
                 decals.draw_arrow(tmp, c, a.angle, a.length, head=False, char=0.95)
                 tmp.set_alpha(int(255 * fade))
                 surf.blit(tmp, (x - c[0], y - c[1]))
+
+        for p in self.pins:
+            x, y = p.x + ox, p.y + oy
+            fade = 1.0 if p.state == P_STUCK else max(0.0, 1.0 - p.fall_t / PIN_FALL)
+            if p.kind == "star":
+                if fade >= 0.999:
+                    decals.draw_shuriken(surf, x, y, math.radians(p.angle), 1.15)
+                else:
+                    tmp = pygame.Surface((44, 44), pygame.SRCALPHA)
+                    decals.draw_shuriken(tmp, 22, 22, math.radians(p.angle), 1.15)
+                    tmp.set_alpha(int(255 * fade))
+                    surf.blit(tmp, (x - 22, y - 22))
+            else:  # kunai
+                if fade >= 0.999:
+                    decals.draw_kunai(surf, (x, y), p.angle, 1.15, shadow=True)
+                else:
+                    tmp = pygame.Surface((80, 80), pygame.SRCALPHA)
+                    decals.draw_kunai(tmp, (40, 40), p.angle, 1.15)
+                    tmp.set_alpha(int(255 * fade))
+                    surf.blit(tmp, (x - 40, y - 40))
 
         blink_on = (pygame.time.get_ticks() // 300) % 2 == 0
         for c in self.charges:

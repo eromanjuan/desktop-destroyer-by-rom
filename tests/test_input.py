@@ -52,8 +52,11 @@ def main() -> int:
     check("toolbar click leaves desktop intact", pixels(app.world) == before)
     check("toolbar click does not start drawing", app.drawing is False)
 
-    send(type=pygame.KEYDOWN, key=pygame.K_1, mod=0, unicode="1", scancode=0)
-    check("hotkey 1 selects hammer", app.tool.id == "hammer")
+    send(type=pygame.KEYDOWN, key=pygame.K_h, mod=0, unicode="h", scancode=0)
+    check("letter hotkey H selects hammer", app.tool.id == "hammer")
+    send(type=pygame.KEYDOWN, key=pygame.K_k, mod=0, unicode="k", scancode=0)
+    check("letter hotkey K selects katana", app.tool.id == "katana")
+    send(type=pygame.KEYDOWN, key=pygame.K_h, mod=0, unicode="h", scancode=0)  # back to hammer
 
     # Dragging the grip repositions the bar, still without damaging anything.
     before = pixels(app.world)
@@ -98,6 +101,28 @@ def main() -> int:
     check("chain detonates and craters the desktop", pixels(app.world) != before)
     check("chain fully drains", not app.fire.pending)
 
+    # The Bugs tool places critters by hand; nothing spawns on its own.
+    bug_tool = [t for t in app.tools if t.id == "bug"][0]
+    app.select(bug_tool)
+    check("bugs do not auto-spawn", app.bugs.auto is False)
+    n0 = len(app.bugs)
+    for spot in ((250, 200), (350, 260), (450, 300)):
+        send(type=pygame.MOUSEBUTTONDOWN, button=1, pos=spot)
+        send(type=pygame.MOUSEBUTTONUP, button=1, pos=spot)
+    check("left-click places bugs", len(app.bugs) == n0 + 3)
+
+    # The toolbar toggle cycles bar -> grid -> hidden -> bar.
+    app.toolbar.mode = "bar"
+    send(type=pygame.MOUSEBUTTONDOWN, button=1, pos=app.toolbar.toggle_rect.center)
+    check("toggle switches to grid", app.toolbar.mode == "grid")
+    send(type=pygame.KEYDOWN, key=pygame.K_TAB, mod=0, unicode="", scancode=0)
+    check("TAB cycles to hidden", app.toolbar.mode == "hidden")
+    check("toggle stays clickable when hidden",
+          app.toolbar.contains(app.toolbar.toggle_rect.center))
+    while app.toolbar.mode != "bar":           # restore the bar so buttons exist
+        app.toolbar.cycle_mode()
+
+    app.select([t for t in app.tools if t.id == "hammer"][0])
     send(type=pygame.MOUSEBUTTONDOWN, button=1, pos=button("clean").rect.center)
     send(type=pygame.MOUSEBUTTONUP, button=1, pos=button("clean").rect.center)
     for _ in range(90):

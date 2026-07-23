@@ -23,6 +23,7 @@ from . import APP_NAME
 from .audio import Audio
 from .config import (FPS, HINT_FADE, HINT_HOLD, HINT_TEXT, SHAKE_DECAY,
                      SHAKE_MAX)
+from .bugs import BugSystem
 from .fire import FireSystem
 from .particles import ParticleSystem
 from .toolbar import Toolbar, load_font
@@ -85,6 +86,7 @@ class App:
         self.audio = Audio(ASSET_SOUNDS, enabled=audio_enabled, rng=self.rng)
         self.particles = ParticleSystem(self.rng)
         self.fire = FireSystem(self.rng)
+        self.bugs = BugSystem(self.rng)
         self.tools = build_tools()
         self.tool = self.tools[0]
         self.toolbar = Toolbar(self.tools, self.size)
@@ -93,7 +95,7 @@ class App:
         self.ctx = ToolContext(
             world=self.world, pristine=self.pristine, particles=self.particles,
             audio=self.audio, rng=self.rng, shake=self.add_shake, size=self.size,
-            fire=self.fire,
+            fire=self.fire, bugs=self.bugs,
         )
 
         self.clock = pygame.time.Clock()
@@ -166,6 +168,8 @@ class App:
                     self.start_sweep()
                 elif event.key == pygame.K_SPACE:
                     self.save_screenshot()
+                elif event.key == pygame.K_TAB:
+                    self.toolbar.cycle_mode()
                 else:
                     for tool in self.tools:
                         if tool.key == event.key:
@@ -177,8 +181,10 @@ class App:
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 action = self.toolbar.handle_event(event)
-                if action == "quit":
+                if action in ("quit",):
                     self.running = False
+                elif action == "toggle":
+                    pass                       # the toolbar cycled its own layout
                 elif action == "clean":
                     self.start_sweep()
                     self.audio.play("click")
@@ -226,6 +232,7 @@ class App:
         # Fire runs before the particles it emits, so those flames simulate the
         # same frame; it may also char `world` and light gasoline as it spreads.
         self.fire.update(dt, self.ctx)
+        self.bugs.update(dt, self.ctx)
         self.particles.update(dt, self.size)
         self.trauma = max(0.0, self.trauma - SHAKE_DECAY * dt * max(0.35, self.trauma))
         self.hint_timer += dt
@@ -241,6 +248,7 @@ class App:
         self.screen.blit(self.world, offset)
         # Wet gasoline and the ember floor sit under the flame particles...
         self.fire.draw_ground(self.screen, offset)
+        self.bugs.draw(self.screen, offset)          # critters crawl on the glass
         self.particles.draw(self.screen, offset)
         self.tool.draw_overlay(self.screen, offset)
         # ...while stuck arrows, planted charges and blast rings sit on top,
@@ -340,6 +348,7 @@ def selftest(frames: int = 40) -> int:
         app.select(tool)
         app.particles.clear()          # so `peak` measures this tool alone
         app.fire.clear()               # and no fire bleeds in from the last tool
+        app.bugs.clear()
         pos = (w // 2, h // 2)
         before = pygame.image.tobytes(app.world, "RGB")
         peak = 0
@@ -350,6 +359,7 @@ def selftest(frames: int = 40) -> int:
             tool.update(app.ctx, 1 / 60, nxt, True)
             tool.hold(app.ctx, nxt, pos, 1 / 60)
             app.fire.update(1 / 60, app.ctx)
+            app.bugs.update(1 / 60, app.ctx)
             app.particles.update(1 / 60, app.size)
             app.draw()
             peak = max(peak, len(app.particles))
@@ -369,14 +379,21 @@ def selftest(frames: int = 40) -> int:
         for _ in range(140):
             tool.update(app.ctx, 1 / 60, pos, False)
             app.fire.update(1 / 60, app.ctx)
+            app.bugs.update(1 / 60, app.ctx)
             app.particles.update(1 / 60, app.size)
             app.draw()
             peak = max(peak, len(app.particles))
 
-        # Peak, not final: by now most particles have expired, so a final count
-        # of zero would hide a tool that never emitted anything at all.
-        marked = pygame.image.tobytes(app.world, "RGB") != before
-        ok = marked and peak > 0
+        # The Bugs tool places critters rather than damaging the screen, so it
+        # is judged on whether bugs actually appeared, not on world damage.
+        if tool.id == "bug":
+            ok = len(app.bugs) > 0
+            marked = f"bugs_placed={len(app.bugs)}"
+        else:
+            # Peak, not final: by now most particles have expired, so a final
+            # count of zero would hide a tool that never emitted anything.
+            marked = pygame.image.tobytes(app.world, "RGB") != before
+            ok = marked and peak > 0
         if not ok:
             failed.append(tool.label)
         print(f"  {'ok ' if ok else 'FAIL'}  {tool.label:<14} "

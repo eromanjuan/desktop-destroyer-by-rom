@@ -83,9 +83,14 @@ def detonate(ctx, pos, fx: BlastFX | None = None,
                                color=(255, 214, 140), life=(0.25, 0.85))
     ctx.particles.smoke_cloud(pos, count=int(20 * scale))
 
-    # A blast lights any gasoline caught in it -- the whole point of pouring.
+    # A blast lights any gasoline caught in it -- the whole point of pouring --
+    # and shakes loose any shuriken or kunai stuck nearby.
     if getattr(ctx, "fire", None) is not None:
         ctx.fire.ignite(pos, BLAST * scale * 0.85, ctx)
+        ctx.fire.dislodge(pos, BLAST * scale)
+    # ...and incinerates any bugs inside it.
+    if getattr(ctx, "bugs", None) is not None:
+        ctx.bugs.hit(ctx, pos, BLAST * scale * 0.9, "burn")
 
     if fx is not None:
         fx.add(pos, intensity=volume)

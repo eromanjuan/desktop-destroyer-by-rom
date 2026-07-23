@@ -278,6 +278,71 @@ def stuck_arrow(world: pygame.Surface, pos, angle: float, length: float,
     world.blit(s, (pos[0] - pad, pos[1] - pad))
 
 
+def draw_shuriken(surf: pygame.Surface, x, y, spin: float, scale: float = 1.0) -> None:
+    """A four-point throwing star. Symmetric, so it spins in flight."""
+    pts = []
+    for i in range(8):
+        a = spin + i * math.pi / 4
+        rad = (13 if i % 2 == 0 else 5) * scale
+        pts.append((x + math.cos(a) * rad, y + math.sin(a) * rad))
+    pygame.draw.polygon(surf, (60, 64, 72), pts)
+    pygame.draw.polygon(surf, (200, 206, 218), pts, max(1, int(2 * scale)))
+    pygame.draw.circle(surf, (30, 32, 38), (int(x), int(y)), max(1, int(2 * scale)))
+
+
+def draw_kunai(surf: pygame.Surface, tip, angle: float, scale: float = 1.0,
+               shadow: bool = False) -> None:
+    """A kunai dagger with its point at `tip`, body trailing back along `angle`.
+
+    Unlike the star it does not spin -- it flies point-first like a thrown knife,
+    so `angle` is its heading, not a rotation to animate.
+    """
+    a = math.radians(angle)
+    c, s = math.cos(a), math.sin(a)
+
+    def m(lx, ly):
+        return (tip[0] + (lx * c - ly * s) * scale, tip[1] + (lx * s + ly * c) * scale)
+
+    if shadow:
+        so = 6 * scale
+        pygame.draw.line(surf, (0, 0, 0, 70), m(-2, 0 + so / scale),
+                         m(-26, 0 + so / scale), max(2, int(4 * scale)))
+
+    # Leaf-shaped blade (tip at 0, body runs back along -x).
+    blade = [m(2, 0), m(-11, -4), m(-15, 0), m(-11, 4)]
+    pygame.draw.polygon(surf, (196, 202, 214), blade)
+    pygame.draw.polygon(surf, (70, 74, 84), blade, max(1, int(scale)))
+    # Bright edge highlight.
+    pygame.draw.line(surf, (240, 244, 250), m(2, -0.5), m(-13, -0.5), max(1, int(scale)))
+    # Shaft and ring pommel.
+    pygame.draw.line(surf, (74, 58, 42), m(-15, 0), m(-25, 0), max(2, int(3 * scale)))
+    pygame.draw.circle(surf, (90, 70, 50), m(-28, 0), max(2, int(3.2 * scale)), max(1, int(2 * scale)))
+
+
+def stuck_kunai(world: pygame.Surface, pos, angle: float, rng: random.Random) -> None:
+    """Plant a kunai in the screen, point buried, handle jutting out."""
+    pad = 70
+    s = pygame.Surface((pad * 2, pad * 2), pygame.SRCALPHA)
+    c = (pad, pad)
+    bullet_hole(s, c, rng.randint(4, 6), rng)          # the puncture at the tip
+    draw_kunai(s, c, angle, scale=1.15, shadow=True)
+    world.blit(s, (pos[0] - pad, pos[1] - pad))
+
+
+def stuck_shuriken(world: pygame.Surface, pos, angle: float, rng: random.Random) -> None:
+    """Embed a throwing star flat in the screen, with a soft shadow."""
+    pad = 40
+    s = pygame.Surface((pad * 2, pad * 2), pygame.SRCALPHA)
+    c = (pad, pad)
+    # Shadow first, offset down-right.
+    shadow = pygame.Surface((pad * 2, pad * 2), pygame.SRCALPHA)
+    draw_shuriken(shadow, c[0], c[1], angle, 1.15)
+    shadow.fill((0, 0, 0, 90), special_flags=pygame.BLEND_RGBA_MULT)
+    s.blit(shadow, (5, 6))
+    draw_shuriken(s, c[0], c[1], angle, 1.15)
+    world.blit(s, (pos[0] - pad, pos[1] - pad))
+
+
 def slash(world: pygame.Surface, p0, p1, rng: random.Random, width: float = 8.0) -> None:
     """A clean cut between two points.
 
@@ -412,6 +477,26 @@ def nuke_crater(world: pygame.Surface, pos, radius: int, rng: random.Random) -> 
         d = radius * rng.uniform(0.85, 1.05)
         scorch(world, (pos[0] + math.cos(a) * d, pos[1] + math.sin(a) * d),
                int(radius * 0.12), rng, strength=rng.randint(40, 80))
+
+
+def blood_splat(world: pygame.Surface, pos, radius: int, rng: random.Random,
+                color=(132, 12, 12)) -> None:
+    """A small wet splat with a few flung droplets -- where a bug was crushed."""
+    radius = max(3, int(radius))
+    size = radius * 6
+    s = pygame.Surface((size, size), pygame.SRCALPHA)
+    c = (size // 2, size // 2)
+
+    pygame.draw.polygon(s, (*color, 220), _irregular(rng, c, radius, 0.6, 1.0, points=9))
+    pygame.draw.polygon(s, (*color, 255), _irregular(rng, c, radius * 0.6, 0.7, 1.0, points=7))
+    # Flung droplets and a couple of streaks.
+    for _ in range(rng.randint(6, 12)):
+        a = rng.uniform(0, math.tau)
+        d = rng.uniform(radius, radius * 2.6)
+        rr = rng.uniform(1, radius * 0.35)
+        pygame.draw.circle(s, (*color, rng.randint(180, 240)),
+                           (int(c[0] + math.cos(a) * d), int(c[1] + math.sin(a) * d)), int(rr))
+    world.blit(s, (pos[0] - c[0], pos[1] - c[1]))
 
 
 def paint_stamp(world: pygame.Surface, pos, radius: int, color, alpha: int = 235) -> None:

@@ -30,6 +30,8 @@ class Washer(Tool):
         self.scrubbing = True
         ctx.audio.start_loop("wash")
         decals.soft_restore(ctx.world, ctx.pristine, pos, RADIUS)
+        if ctx.fire is not None:
+            ctx.fire.douse(pos, RADIUS, ctx)
         ctx.particles.water(pos, count=6)
 
     def hold(self, ctx: ToolContext, pos, prev, dt):
@@ -37,6 +39,8 @@ class Washer(Tool):
         moved = math.hypot(pos[0] - prev[0], pos[1] - prev[1])
         for point in iter_segment(prev, pos, RADIUS * 0.3):
             decals.soft_restore(ctx.world, ctx.pristine, point, RADIUS)
+            if ctx.fire is not None:
+                ctx.fire.douse(point, RADIUS, ctx)
         if moved > 3 and r.random() < 0.5:
             ctx.particles.water(pos, count=r.randint(2, 5))
 

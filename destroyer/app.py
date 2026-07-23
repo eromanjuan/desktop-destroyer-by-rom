@@ -23,6 +23,7 @@ from . import APP_NAME
 from .audio import Audio
 from .config import (FPS, HINT_FADE, HINT_HOLD, HINT_TEXT, SHAKE_DECAY,
                      SHAKE_MAX)
+from .fire import FireSystem
 from .particles import ParticleSystem
 from .toolbar import Toolbar, load_font
 from .tools import ToolContext, build_tools
@@ -83,6 +84,7 @@ class App:
 
         self.audio = Audio(ASSET_SOUNDS, enabled=audio_enabled, rng=self.rng)
         self.particles = ParticleSystem(self.rng)
+        self.fire = FireSystem(self.rng)
         self.tools = build_tools()
         self.tool = self.tools[0]
         self.toolbar = Toolbar(self.tools, self.size)
@@ -91,6 +93,7 @@ class App:
         self.ctx = ToolContext(
             world=self.world, pristine=self.pristine, particles=self.particles,
             audio=self.audio, rng=self.rng, shake=self.add_shake, size=self.size,
+            fire=self.fire,
         )
 
         self.clock = pygame.time.Clock()
@@ -132,6 +135,7 @@ class App:
         if self.sweep_x is not None:
             return
         self.sweep_x = 0.0
+        self.fire.clear()          # the wipe puts out any fire and clears the fuel
         self.audio.play("clean")
 
     def _update_sweep(self, dt: float) -> None:
@@ -219,6 +223,9 @@ class App:
         self.prev_mouse = pos
 
         self._update_sweep(dt)
+        # Fire runs before the particles it emits, so those flames simulate the
+        # same frame; it may also char `world` and light gasoline as it spreads.
+        self.fire.update(dt, self.ctx)
         self.particles.update(dt, self.size)
         self.trauma = max(0.0, self.trauma - SHAKE_DECAY * dt * max(0.35, self.trauma))
         self.hint_timer += dt
@@ -232,8 +239,13 @@ class App:
             self.screen.fill((0, 0, 0))
 
         self.screen.blit(self.world, offset)
+        # Wet gasoline and the ember floor sit under the flame particles...
+        self.fire.draw_ground(self.screen, offset)
         self.particles.draw(self.screen, offset)
         self.tool.draw_overlay(self.screen, offset)
+        # ...while stuck arrows, planted charges and blast rings sit on top,
+        # drawn every frame so they persist under whatever tool is active.
+        self.fire.draw_top(self.screen, offset)
 
         if self.sweep_x is not None:
             self._draw_foam(int(self.sweep_x))
@@ -311,6 +323,7 @@ class App:
     def shutdown(self) -> None:
         for tool in self.tools:
             tool.deactivate(self.ctx)
+        self.fire.stop(self.ctx)
         self.audio.stop_all()
         pygame.quit()
 
@@ -326,6 +339,7 @@ def selftest(frames: int = 40) -> int:
     for tool in app.tools:
         app.select(tool)
         app.particles.clear()          # so `peak` measures this tool alone
+        app.fire.clear()               # and no fire bleeds in from the last tool
         pos = (w // 2, h // 2)
         before = pygame.image.tobytes(app.world, "RGB")
         peak = 0
@@ -335,6 +349,7 @@ def selftest(frames: int = 40) -> int:
             nxt = (pos[0] + 7, pos[1] + (3 if i % 2 else -3))
             tool.update(app.ctx, 1 / 60, nxt, True)
             tool.hold(app.ctx, nxt, pos, 1 / 60)
+            app.fire.update(1 / 60, app.ctx)
             app.particles.update(1 / 60, app.size)
             app.draw()
             peak = max(peak, len(app.particles))
@@ -343,12 +358,17 @@ def selftest(frames: int = 40) -> int:
         # Secondary action -- a no-op for most tools, but it is the only thing
         # that makes the remote bomb do anything at all.
         tool.alt_press(app.ctx, pos)
+        # Gasoline is inert on its own -- something else has to light it. Model
+        # that here so its burn/char path is actually exercised.
+        if tool.id == "gasoline":
+            app.fire.ignite((w // 2, h // 2), 90, app.ctx)
 
         # Tools with deferred effects only land their damage some time after
         # release -- keep ticking long enough to cover the slowest of them
         # (the grenade's flight plus its full fuse) so that path really runs.
         for _ in range(140):
             tool.update(app.ctx, 1 / 60, pos, False)
+            app.fire.update(1 / 60, app.ctx)
             app.particles.update(1 / 60, app.size)
             app.draw()
             peak = max(peak, len(app.particles))

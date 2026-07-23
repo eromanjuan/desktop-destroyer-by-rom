@@ -75,26 +75,28 @@ def main() -> int:
     check("mouse up stops drawing", app.drawing is False)
 
     # Remote bomb: left-click plants, right-click sets the whole field off.
+    # Charges live in the shared fire system now, so fire from any tool can set
+    # them off; the bomb tool is just the planter and the remote trigger.
     bomb = [t for t in app.tools if t.id == "bomb"][0]
     app.select(bomb)
     for spot in ((200, 150), (400, 250), (600, 340)):
         send(type=pygame.MOUSEBUTTONDOWN, button=1, pos=spot)
         send(type=pygame.MOUSEBUTTONUP, button=1, pos=spot)
-    check("left-click plants charges", len(bomb.charges) == 3)
+    check("left-click plants charges", app.fire.charge_count == 3)
 
     # A right-click on the toolbar is the UI's, not the tool's.
     send(type=pygame.MOUSEBUTTONDOWN, button=3, pos=bar.rect.center)
-    check("right-click on toolbar is ignored", len(bomb.charges) == 3)
+    check("right-click on toolbar is ignored", app.fire.charge_count == 3)
 
     before = pixels(app.world)
     send(type=pygame.MOUSEBUTTONDOWN, button=3, pos=(700, 420))
     check("right-click triggers every charge",
-          len(bomb.charges) == 0 and len(bomb.pending) == 3)
+          app.fire.charge_count == 0 and len(app.fire.pending) == 3)
     check("right-click never starts a drag", app.drawing is False)
     for _ in range(120):
         app.update(1 / 60)
     check("chain detonates and craters the desktop", pixels(app.world) != before)
-    check("chain fully drains", not bomb.pending)
+    check("chain fully drains", not app.fire.pending)
 
     send(type=pygame.MOUSEBUTTONDOWN, button=1, pos=button("clean").rect.center)
     send(type=pygame.MOUSEBUTTONUP, button=1, pos=button("clean").rect.center)

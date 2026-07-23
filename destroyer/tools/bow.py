@@ -102,7 +102,12 @@ class Bow(Tool):
         decals.bullet_hole(ctx.world, pos, int(8 + 9 * charge), r)
         if charge > 0.75:
             decals.impact_crack(ctx.world, pos, int(34 + 26 * charge), r)
-        decals.stuck_arrow(ctx.world, pos, arrow.angle, 46 + 26 * charge, r)
+        # The arrow becomes a persistent entity, not a baked decal, so fire from
+        # any tool can catch it, char it and topple it out of the screen.
+        if ctx.fire is not None:
+            ctx.fire.add_arrow(pos, arrow.angle, 46 + 26 * charge, charge)
+        else:
+            decals.stuck_arrow(ctx.world, pos, arrow.angle, 46 + 26 * charge, r)
 
         ctx.particles.burst_debris(pos, count=int(5 + 12 * charge),
                                    speed=(80, 260 + 320 * charge))

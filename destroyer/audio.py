@@ -234,6 +234,73 @@ def _syn_rock(rng: random.Random) -> np.ndarray:
     return _norm(_mix(thud, grit, gravel), 0.8)
 
 
+def _syn_pour(rng: random.Random) -> np.ndarray:
+    """Liquid trickling out of a can -- a looped, wet, gurgling stream."""
+    n = _n(1.2)
+    base = _lowpass(_noise(n, rng), 0.14) * 2.2
+    t = np.arange(n, dtype=np.float32) / SR
+    # Slow gurgle plus a faster splatter, so it isn't a flat hiss.
+    gurgle = 0.6 + 0.4 * np.sin(2 * np.pi * 5.5 * t) * np.sin(2 * np.pi * 1.3 * t + 0.7)
+    splat = (_noise(n, rng) - _lowpass(_noise(n, rng), 0.4)) * 0.12
+    return _seamless(_norm(_mix(base * gurgle, splat), 0.5))
+
+
+def _syn_whoosh(rng: random.Random) -> np.ndarray:
+    """Fwoomp -- gasoline catching all at once."""
+    n = _n(0.7)
+    x = _noise(n, rng)
+    swell = np.linspace(0.0, 1.0, n, dtype=np.float32)
+    # Fast whump at the front, then a roaring tail that opens up and fades.
+    body = _lowpass(x, 0.09) * ((swell ** 0.4) * (1.0 - swell) ** 1.3) * 4.0
+    boom = _sweep(120, 40, n) * _env(n, 0.002, 3.0) * 0.8
+    return _norm(_mix(body, boom), 0.85)
+
+
+def _syn_burning(rng: random.Random) -> np.ndarray:
+    """A looped fire crackle -- filtered roar with random pops on top."""
+    n = _n(1.6)
+    roar = _lowpass(_noise(n, rng), 0.08) * 2.6
+    t = np.arange(n, dtype=np.float32) / SR
+    breathe = 0.7 + 0.3 * np.sin(2 * np.pi * 2.7 * t) * np.sin(2 * np.pi * 0.6 * t)
+    crackle = np.zeros(n, np.float32)
+    for _ in range(90):
+        off = rng.randint(0, n - 200)
+        ln = _n(rng.uniform(0.003, 0.012))
+        if off + ln > n:
+            continue
+        crackle[off:off + ln] += _noise(ln, rng) * _env(ln, 0.0004, 8.0) * rng.uniform(0.06, 0.24)
+    return _seamless(_norm(_mix(roar * breathe, crackle), 0.55))
+
+
+def _syn_lock(rng: random.Random) -> np.ndarray:
+    """Targeting lock: a short two-tone electronic blip."""
+    n = _n(0.12)
+    t = np.arange(n, dtype=np.float32) / SR
+    a = np.sin(2 * np.pi * 1320 * t) * _env(n, 0.001, 6.0)
+    b = np.sin(2 * np.pi * 1760 * t) * _env(n, 0.001, 6.0)
+    sig = np.where(t < 0.05, a, b)
+    return _norm(sig, 0.4)
+
+
+def _syn_launch(rng: random.Random) -> np.ndarray:
+    """Missile leaving the rail: a rising whistle over a rocket-motor hiss."""
+    n = _n(0.8)
+    whistle = _sweep(400, 1500, n) * _env(n, 0.02, 1.4) * 0.5
+    motor = _lowpass(_noise(n, rng), 0.12) * _env(n, 0.03, 1.2) * 2.2
+    return _norm(_mix(whistle, motor), 0.7)
+
+
+def _syn_nuke(rng: random.Random) -> np.ndarray:
+    """A very big blast: deep sub drop, long roaring body, rumbling tail."""
+    n = _n(2.6)
+    sub = _sweep(70, 18, n) * _env(n, 0.004, 1.6) * 1.5
+    body = _lowpass(_noise(n, rng), 0.05) * _env(n, 0.002, 1.1) * 2.6
+    crack = (_noise(n, rng) - _lowpass(_noise(n, rng), 0.5)) * _env(n, 0.0003, 9.0)
+    t = np.arange(n, dtype=np.float32) / SR
+    rumble = _lowpass(_noise(n, rng), 0.03) * (np.exp(-t * 1.2)) * 1.4
+    return _norm(_mix(sub, body, crack, rumble), 1.0)
+
+
 def _syn_click(rng: random.Random) -> np.ndarray:
     n = _n(0.045)
     t = np.arange(n, dtype=np.float32) / SR
@@ -256,6 +323,12 @@ RECIPES = {
     "toss": (_syn_toss, 2, 0.4),
     "slash": (_syn_slash, 3, 0.7),
     "rock": (_syn_rock, 3, 0.8),
+    "pour": (_syn_pour, 1, 0.45),
+    "whoosh": (_syn_whoosh, 2, 0.8),
+    "burning": (_syn_burning, 1, 0.5),
+    "lock": (_syn_lock, 2, 0.5),
+    "launch": (_syn_launch, 2, 0.7),
+    "nuke": (_syn_nuke, 2, 1.0),
 }
 
 

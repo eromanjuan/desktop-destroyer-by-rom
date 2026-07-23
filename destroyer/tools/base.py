@@ -26,6 +26,7 @@ class ToolContext:
     rng: random.Random
     shake: Callable[[float], None]
     size: tuple[int, int]
+    fire: "object" = None        # FireSystem -- shared gasoline/fire, set by App
 
 
 class Tool:

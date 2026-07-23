@@ -3,10 +3,11 @@
   left click    place a charge (they sit there indefinitely, blinking)
   right click   detonate every charge you have placed
 
-Chained blasts are staggered a few frames apart rather than fired on the same
-frame. Simultaneous detonation just looks like one big flash and drops a pile of
-identical work onto a single frame; a ripple reads as a chain reaction and
-spreads the cost out.
+The charges themselves live in the shared FireSystem, not on this tool. That is
+what lets a charge go off on its own the instant fire reaches it -- a spreading
+gasoline fire, a burning arrow, or another blast -- with no remote needed, even
+while you are holding a completely different tool. This class is just the
+controller: it plants charges and pulls the remote trigger.
 """
 
 from __future__ import annotations
@@ -15,21 +16,12 @@ import math
 
 import pygame
 
-from ..explosion import BLAST, BlastFX, detonate
+from ..explosion import BLAST
 from ..toolbar import load_font
 from .base import Tool, ToolContext
 
 PLACE_COOLDOWN = 0.12
-CHAIN_STAGGER = 0.07      # seconds between charges in a chain
 MAX_CHARGES = 60          # generous, but stops a held click from melting things
-
-
-class Charge:
-    __slots__ = ("pos", "age")
-
-    def __init__(self, pos):
-        self.pos = pos
-        self.age = 0.0
 
 
 def draw_charge(surf, pos, blink_on: bool, scale: float = 1.0, armed: bool = False):
@@ -61,12 +53,8 @@ class RemoteBomb(Tool):
     hint = "Left-click to plant  ·  right-click to detonate all"
 
     def __init__(self):
-        self.charges: list[Charge] = []
-        self.pending: list[list] = []      # [pos, delay_remaining]
-        self.fx = BlastFX()
         self.cooldown = 0.0
-        self.blink = 0.0
-        self.cursor = (0, 0)
+        self._count = 0        # cached from the fire system, for the cursor label
 
     # -- input -------------------------------------------------------------
     def press(self, ctx: ToolContext, pos):
@@ -77,69 +65,33 @@ class RemoteBomb(Tool):
             self._plant(ctx, pos)
 
     def alt_press(self, ctx: ToolContext, pos):
-        self._detonate_all(ctx)
+        if ctx.fire is not None and ctx.fire.detonate_all(ctx):
+            ctx.audio.play("click", volume=0.6)
 
     def _plant(self, ctx: ToolContext, pos):
-        if len(self.charges) >= MAX_CHARGES:
+        if ctx.fire is None or ctx.fire.charge_count >= MAX_CHARGES:
             return
         self.cooldown = PLACE_COOLDOWN
-        self.charges.append(Charge(pos))
+        ctx.fire.add_charge(pos)
         ctx.audio.play("click", volume=0.8)
 
-    def _detonate_all(self, ctx: ToolContext):
-        if not self.charges:
-            return
-        # Ripple outward from the first one placed.
-        for i, charge in enumerate(self.charges):
-            self.pending.append([charge.pos, i * CHAIN_STAGGER])
-        self.charges.clear()
-
-    # -- simulation --------------------------------------------------------
     def update(self, ctx: ToolContext, dt, pos, held):
         self.cooldown = max(0.0, self.cooldown - dt)
-        self.blink += dt
-        self.cursor = pos
-        self.fx.update(dt)
-        for charge in self.charges:
-            charge.age += dt
-
-        if self.pending:
-            # Quieter per-blast the longer the chain, so the mixer doesn't clip.
-            volume = max(0.35, 1.0 - 0.05 * len(self.pending))
-            for item in list(self.pending):
-                item[1] -= dt
-                if item[1] <= 0.0:
-                    self.pending.remove(item)
-                    detonate(ctx, item[0], self.fx, volume=volume)
-
-    def deactivate(self, ctx: ToolContext):
-        # Planted charges survive a tool switch -- that's the point of them.
-        # Anything already triggered still goes off, just immediately.
-        for item in self.pending:
-            detonate(ctx, item[0], None, volume=0.5)
-        self.pending.clear()
-        self.fx.clear()
+        self._count = ctx.fire.charge_count if ctx.fire is not None else 0
 
     # -- presentation ------------------------------------------------------
     def draw_overlay(self, surf, offset):
-        ox, oy = offset
-        blink_on = math.sin(self.blink * math.tau * 1.6) > -0.3
-        cx, cy = self.cursor
-        for charge in self.charges:
-            centre = (charge.pos[0] + ox, charge.pos[1] + oy)
-            # Blast preview only for the charge you're standing near. Drawing a
-            # full ring per charge turns a well-mined desktop into spaghetti.
-            near = math.hypot(charge.pos[0] - cx, charge.pos[1] - cy) < BLAST * 1.15
-            if near:
-                steps = 40
-                for i in range(0, steps, 2):
-                    a0, a1 = (i / steps) * math.tau, ((i + 1) / steps) * math.tau
-                    pygame.draw.line(
-                        surf, (238, 108, 56),
-                        (centre[0] + math.cos(a0) * BLAST, centre[1] + math.sin(a0) * BLAST),
-                        (centre[0] + math.cos(a1) * BLAST, centre[1] + math.sin(a1) * BLAST), 2)
-            draw_charge(surf, centre, blink_on)
-        self.fx.draw(surf, offset)
+        # The charges and their blasts are drawn by the fire system every frame
+        # (so they stay visible under any tool). Here we only preview the blast
+        # radius at the cursor, where the next charge will land.
+        x, y = pygame.mouse.get_pos()
+        steps = 40
+        for i in range(0, steps, 2):
+            a0, a1 = (i / steps) * math.tau, ((i + 1) / steps) * math.tau
+            pygame.draw.line(
+                surf, (238, 108, 56),
+                (x + math.cos(a0) * BLAST, y + math.sin(a0) * BLAST),
+                (x + math.cos(a1) * BLAST, y + math.sin(a1) * BLAST), 1)
 
     def draw_icon(self, surf, rect, tint):
         cx, cy = rect.center
@@ -149,7 +101,7 @@ class RemoteBomb(Tool):
 
     def draw_cursor(self, surf, pos):
         x, y = pos
-        armed = bool(self.charges)
+        armed = self._count > 0
         draw_charge(surf, (x - 28, y + 14), True, scale=0.9, armed=armed)
 
         for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
@@ -159,7 +111,7 @@ class RemoteBomb(Tool):
                              (x + dx * 12, y + dy * 12), 2)
 
         if armed:
-            text = _label_font().render(f"{len(self.charges)} planted  ·  right-click",
+            text = _label_font().render(f"{self._count} planted  ·  right-click",
                                         True, (255, 236, 220))
             box = text.get_rect()
             box.inflate_ip(14, 10)

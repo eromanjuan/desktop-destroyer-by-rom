@@ -201,18 +201,25 @@ def scorch(world: pygame.Surface, pos, radius: int, rng: random.Random, strength
 
 def draw_arrow(surf: pygame.Surface, tip, angle: float, length: float,
                scale: float = 1.0, color=(126, 84, 48), shadow: bool = False,
-               head: bool = True) -> None:
+               head: bool = True, char: float = 0.0) -> None:
     """Draw an arrow with its head at `tip`, shaft running out at `angle` deg.
 
     Shared by the arrow in flight and the one left stuck in the screen, so a
     loosed arrow and a planted one are unmistakably the same object. Pass
     `head=False` once it has landed -- the point is buried in the surface, and
     drawing it anyway makes the arrow look like it is lying on the screen.
+    `char` (0..1) blackens the whole arrow as it burns, so a lit arrow reads as
+    charred wood rather than fresh.
     """
+    def _burn(rgb):
+        # Lerp toward near-black soot as char rises.
+        return tuple(int(v + (24 - v) * char) for v in rgb)
+
     rad = math.radians(angle)
     dx, dy = math.cos(rad), math.sin(rad)
     px, py = -dy, dx                      # perpendicular, for fletching + head
     tail = (tip[0] + dx * length, tip[1] + dy * length)
+    color = _burn(color)
 
     if shadow:
         # Short and faint: a long opaque one reads as a second object lying
@@ -224,10 +231,11 @@ def draw_arrow(surf: pygame.Surface, tip, angle: float, length: float,
                          (s_tail[0] + ox, s_tail[1] + oy), max(2, int(5 * scale)))
 
     w = max(1, int(5 * scale))
-    pygame.draw.line(surf, (58, 38, 22), tip, tail, w + 2)
+    pygame.draw.line(surf, _burn((58, 38, 22)), tip, tail, w + 2)
     pygame.draw.line(surf, color, tip, tail, w)
-    # Highlight along the top of the shaft.
-    pygame.draw.line(surf, (186, 142, 92),
+    # Highlight along the top of the shaft (an ember glow once it is charring).
+    hi = (255, 150, 60) if char > 0.15 else (186, 142, 92)
+    pygame.draw.line(surf, hi,
                      (tip[0] + px * scale, tip[1] + py * scale),
                      (tail[0] + px * scale, tail[1] + py * scale), max(1, int(scale)))
 
@@ -251,10 +259,10 @@ def draw_arrow(surf: pygame.Surface, tip, angle: float, length: float,
         bulge = 6.5 * scale * side
         mid = (tail[0] - dx * vane_len * 0.55 + px * bulge,
                tail[1] - dy * vane_len * 0.55 + py * bulge)
-        pygame.draw.polygon(surf, tint, [tail, mid, forward])
+        pygame.draw.polygon(surf, _burn(tint), [tail, mid, forward])
 
     # Nock.
-    pygame.draw.line(surf, (38, 26, 16), tail,
+    pygame.draw.line(surf, _burn((38, 26, 16)), tail,
                      (tail[0] + dx * 3 * scale, tail[1] + dy * 3 * scale), w)
 
 
@@ -355,6 +363,53 @@ def explosion_crater(world: pygame.Surface, pos, radius: int, rng: random.Random
         d = radius * rng.uniform(0.3, 1.4)
         p = (pos[0] + math.cos(ang) * d, pos[1] + math.sin(ang) * d)
         bullet_hole(world, p, rng.randint(5, 12), rng)
+
+
+def nuke_crater(world: pygame.Surface, pos, radius: int, rng: random.Random) -> None:
+    """A nuke's devastation: a huge charred, cratered, cracked region.
+
+    Built from the smaller decals at scale so it matches the rest of the damage,
+    but layered dense enough to obliterate a big chunk of the screen -- solid
+    black core, radial cracks reaching to the rim, shrapnel pits throughout, and
+    a ragged scorched edge that fades into clean screen.
+    """
+    radius = int(radius)
+
+    # Fill the disc with overlapping soot, densest and blackest at the centre.
+    rings = max(8, radius // 22)
+    for ring in range(rings, 0, -1):
+        rr = radius * ring / rings
+        n = max(3, int(ring * 1.6))
+        for _ in range(n):
+            a = rng.uniform(0, math.tau)
+            d = rng.uniform(0, rr)
+            edge = d / radius                      # 0 centre .. 1 rim
+            strength = int(150 * (1.0 - edge) + 30)
+            scorch(world, (pos[0] + math.cos(a) * d, pos[1] + math.sin(a) * d),
+                   int(radius * rng.uniform(0.10, 0.20)), rng, strength=strength)
+
+    # Cratered core with big radial cracks fracturing outward.
+    impact_crack(world, pos, int(radius * 0.55), rng)
+    for _ in range(rng.randint(14, 22)):
+        ang = rng.uniform(0, math.tau)
+        pts = _jagged(rng, pos, ang, radius * rng.uniform(0.7, 1.05), steps=6, wobble=0.16)
+        s = pygame.Surface(world.get_size(), pygame.SRCALPHA)
+        pygame.draw.lines(s, (10, 9, 11, 220), False, pts, rng.randint(2, 4))
+        world.blit(s, (0, 0))
+
+    # Shrapnel pits scattered across the whole blast.
+    for _ in range(rng.randint(30, 46)):
+        a = rng.uniform(0, math.tau)
+        d = radius * rng.uniform(0.15, 1.0)
+        bullet_hole(world, (pos[0] + math.cos(a) * d, pos[1] + math.sin(a) * d),
+                    rng.randint(6, 16), rng)
+
+    # Molten-looking rim: a broken ring of hot scorch just inside the edge.
+    for _ in range(int(radius / 3)):
+        a = rng.uniform(0, math.tau)
+        d = radius * rng.uniform(0.85, 1.05)
+        scorch(world, (pos[0] + math.cos(a) * d, pos[1] + math.sin(a) * d),
+               int(radius * 0.12), rng, strength=rng.randint(40, 80))
 
 
 def paint_stamp(world: pygame.Surface, pos, radius: int, color, alpha: int = 235) -> None:

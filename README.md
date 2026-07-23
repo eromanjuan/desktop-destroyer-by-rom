@@ -73,13 +73,15 @@ with) and produces `dist/Desktop Destroyer by Rom.exe`. Use
 | 🔨 **Hammer** | Shattered-glass crater, flying debris, screen shake |
 | ⚔️ **Katana** | Drag out a stroke, release to cut. Leaves a tapered gash that bites deepest mid-stroke; a quick click becomes a flick cut |
 | 🔫 **Shotgun** | A cone of bullet holes, muzzle flash, sparks, recoil |
-| 🏹 **Bow** | Hold to draw, release to loose. The arrow flies in and stays stuck in your screen — a full draw shatters the surface around it |
+| 🏹 **Bow** | Hold to draw, release to loose. The arrow stays stuck in your screen — a full draw shatters the surface around it. Set it on fire and it chars and topples out |
 | 🪨 **Rock** | Lob a stone. No fuse, no charge — it lands, it cracks, throw another |
 | 💣 **Grenade** | Arcs in, sits blinking for 1.2s, then craters everything nearby |
-| 🧨 **Remote Bomb** | Left-click to plant charges anywhere, right-click to set them **all** off in a staggered chain |
-| 🔥 **Flamethrower** | Continuous flame while held; burns build to black char |
+| 🧨 **Remote Bomb** | Left-click to plant charges anywhere, right-click to set them **all** off in a staggered chain. Fire reaching a charge sets it off on its own — no remote needed |
+| ⛽ **Gasoline** | Pour a slick, then light it with the flamethrower or any blast. Fire races along the trail like a fuse, burns for 10–20s, and leaves a charred scar |
+| 🔥 **Flamethrower** | Continuous flame while held; burns build to black char, and ignites gasoline and arrows |
+| ☢️ **Nuke Strike** | Lock up to 10 targets, right-click to launch. Each missile craters ~a fifth of the screen and sets off any gasoline or bombs in the blast |
 | 🎨 **Paintbrush** | Rainbow stroke whose hue shifts as you drag |
-| 🧼 **Washer** | Scrubs the original desktop back into view |
+| 🧼 **Washer** | Scrubs the original desktop back into view; also douses gasoline and fire |
 
 ## Command line
 
@@ -114,7 +116,8 @@ destroyer/
   app.py          window, layers, input routing, render loop
   capture.py      screen grab, DPI awareness, always-on-top
   decals.py       permanent damage: cracks, holes, char, cuts, craters, paint
-  explosion.py    the shared blast — used by both the grenade and the bomb
+  explosion.py    the shared blast — used by grenade, bomb, gasoline and nuke
+  fire.py         gasoline, fire, and the flammable things it spreads to
   particles.py    sparks / flame / smoke / debris / droplets
   audio.py        procedural sound bank with on-disk override
   toolbar.py      floating draggable UI
@@ -147,16 +150,26 @@ class Chainsaw(Tool):
 ```
 
 `ctx` gives a tool everything it may touch: `world`, `pristine`, `particles`,
-`audio`, `rng`, `shake()` and `size`.
+`audio`, `rng`, `shake()`, `size` and `fire`.
 
 A tool that needs to render something transient in world space — a projectile
 in flight, say — implements `draw_overlay(surf, offset)`. It runs after the
 particles with the same shake offset, which keeps in-flight objects out of
-`world` until they actually land. The bow, rock, grenade and remote bomb all use
-it; so does the katana, for the flash along a fresh cut.
+`world` until they actually land. The bow, rock, grenade, remote bomb and nuke
+all use it; so does the katana, for the flash along a fresh cut.
 
-`alt_press(ctx, pos)` handles a right-click. Only the remote bomb implements it
-today (that's the detonator), but it's there for any tool wanting a second verb.
+`alt_press(ctx, pos)` handles a right-click — the remote bomb's detonator and
+the nuke's launch button both use it.
+
+**Cross-tool state lives in `ctx.fire`.** Some things outlive the tool that made
+them and must react to a *different* tool's fire: a poured gasoline slick, an
+arrow stuck in the screen, a planted bomb charge. A tool is deactivated the
+instant you switch away, so none of that can live inside a tool — it lives in the
+`FireSystem`, which the App ticks and draws every frame. That single owner is
+what makes gasoline catch from the flamethrower, arrows char and topple, and a
+blast set off the bombs around it (which set off the bombs around *them*). If you
+add a tool that starts a fire or drops something flammable, go through `ctx.fire`
+rather than baking it into `world`.
 
 ### Sounds
 
@@ -183,9 +196,10 @@ assets/sounds/  hammer.wav   slash.wav    gunshot.wav  bow.wav    thunk.wav
 ```bash
 python main.py --selftest       # drives every tool headlessly
 python tests/test_input.py      # toolbar, hotkeys, drag routing, restore
+python tests/test_fire.py       # the cross-tool gasoline / fire / bomb chemistry
 ```
 
-Both run under SDL's dummy video driver, so they need no display and are safe in
+All run under SDL's dummy video driver, so they need no display and are safe in
 CI.
 
 ## Notes and gotchas

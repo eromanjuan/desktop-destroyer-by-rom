@@ -83,6 +83,10 @@ def detonate(ctx, pos, fx: BlastFX | None = None,
                                color=(255, 214, 140), life=(0.25, 0.85))
     ctx.particles.smoke_cloud(pos, count=int(20 * scale))
 
+    # A blast lights any gasoline caught in it -- the whole point of pouring.
+    if getattr(ctx, "fire", None) is not None:
+        ctx.fire.ignite(pos, BLAST * scale * 0.85, ctx)
+
     if fx is not None:
         fx.add(pos, intensity=volume)
     ctx.shake(min(1.0, 0.9 * scale))

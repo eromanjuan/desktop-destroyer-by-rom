@@ -58,6 +58,54 @@ const WEAPONS = [
   [400, 1200, 3000].forEach(ms => setTimeout(reveal, ms));
 })();
 
+/* ─────────────────────────── live stats ───────────────────────────
+   Downloads come from GitHub's real release download counts; visits from a
+   tiny counter service (a static site can't tally its own visits). Both fail
+   silently to a dash so a flaky network never leaves a broken number. */
+(function stats(){
+  const dEl = document.getElementById('statDownloads');
+  const vEl = document.getElementById('statVisits');
+  if (!dEl || !vEl) return;
+
+  const fmt = n => n.toLocaleString();
+  function countUp(el, target){
+    if (typeof target !== 'number' || isNaN(target)) { el.textContent = '—'; return; }
+    const dur = 900, start = performance.now();
+    (function step(now){
+      const k = Math.min(1, (now - start) / dur);
+      el.textContent = fmt(Math.floor(target * (1 - Math.pow(1 - k, 3))));
+      if (k < 1) requestAnimationFrame(step);
+      else el.textContent = fmt(target);
+    })(start);
+  }
+
+  // Downloads: sum every release asset's count, cached 10 min so refreshes
+  // don't burn through GitHub's unauthenticated hourly rate limit.
+  (async function downloads(){
+    try {
+      const hit = JSON.parse(localStorage.getItem('dd_downloads') || 'null');
+      if (hit && Date.now() - hit.t < 600000) { countUp(dEl, hit.n); return; }
+      const res = await fetch('https://api.github.com/repos/eromanjuan/desktop-destroyer-by-rom/releases');
+      if (!res.ok) throw 0;
+      const rels = await res.json();
+      let n = 0;
+      rels.forEach(r => (r.assets || []).forEach(a => { n += a.download_count || 0; }));
+      localStorage.setItem('dd_downloads', JSON.stringify({ n, t: Date.now() }));
+      countUp(dEl, n);
+    } catch { dEl.textContent = '—'; }
+  })();
+
+  // Visits: bump the counter once per page load, show the running total.
+  (async function visits(){
+    try {
+      const res = await fetch('https://api.counterapi.dev/v1/desktopdestroyer-web/visits/up');
+      if (!res.ok) throw 0;
+      const j = await res.json();
+      countUp(vEl, j.count);
+    } catch { vEl.textContent = '—'; }
+  })();
+})();
+
 /* ─────────────────────────── nav + reveal ─────────────────────────── */
 (function chrome(){
   const nav = document.getElementById('nav');

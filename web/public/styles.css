@@ -135,6 +135,14 @@ h3 .msym,h4 .msym,b .msym{margin-right:9px;color:var(--accent)}
 .facts b{display:block;font-size:1.6rem;font-weight:800;letter-spacing:-.02em}
 .facts span{color:var(--dim);font-size:.86rem}
 
+/* live download / visit counters */
+.livestats{display:flex;align-items:center;gap:22px;margin-top:18px;flex-wrap:wrap}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(124,224,160,.6);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(124,224,160,.55)}70%{box-shadow:0 0 0 7px rgba(124,224,160,0)}100%{box-shadow:0 0 0 0 rgba(124,224,160,0)}}
+.lstat{display:flex;align-items:center;gap:8px;color:var(--dim);font-size:.92rem}
+.lstat svg{width:18px;height:18px;fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.lstat b{color:var(--text);font-size:1.15rem;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
 /* ── playground ────────────────────────────────────── */
 .demo-frame{
   border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);
